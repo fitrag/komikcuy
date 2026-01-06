@@ -1,0 +1,53 @@
+{
+    "name": "KomikCuy - Baca Komik Modern",
+    "short_name": "KomikCuy",
+    "description": "Baca komik manga, manhwa, dan manhua secara gratis dengan tampilan modern dan nyaman.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#020617",
+    "theme_color": "#020617",
+    "orientation": "portrait-primary",
+    "categories": [
+        "entertainment",
+        "books"
+    ],
+    "icons": [
+        {
+            "src": "/icons/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "screenshots": [],
+    "shortcuts": [
+        {
+            "name": "Favorites",
+            "short_name": "Favorites",
+            "url": "/favorites",
+            "icons": [
+                {
+                    "src": "/icons/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "History",
+            "short_name": "History",
+            "url": "/history",
+            "icons": [
+                {
+                    "src": "/icons/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        }
+    ]
+}
