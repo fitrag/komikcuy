@@ -1,11 +1,17 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useAuth } from './composables/useAuth.js'
+import { usePWA } from './composables/usePWA.js'
 
 const router = useRouter()
 const route = useRoute()
 const searchQuery = ref('')
 const showSearch = ref(false)
+const showUserMenu = ref(false)
+
+const { user, isLoggedIn, logout } = useAuth()
+usePWA() // Initialize PWA listeners globally
 
 const handleSearch = () => {
     if (searchQuery.value.trim()) {
@@ -19,6 +25,17 @@ const handleSearch = () => {
 const isActive = (path) => {
     if (path === '/') return route.path === '/'
     return route.path.startsWith(path)
+}
+
+const handleLogout = async () => {
+    await logout()
+    showUserMenu.value = false
+    router.push('/')
+}
+
+// Close user menu when clicking outside
+const closeUserMenu = () => {
+    showUserMenu.value = false
 }
 </script>
 
@@ -63,6 +80,56 @@ const isActive = (path) => {
                     </svg>
                 </button>
             </form>
+
+            <!-- Auth Section - Desktop -->
+            <div v-if="isLoggedIn" class="relative">
+                <button 
+                    @click="showUserMenu = !showUserMenu"
+                    class="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 transition-all duration-200"
+                >
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white font-bold text-sm">
+                        {{ user?.name?.charAt(0)?.toUpperCase() || 'U' }}
+                    </div>
+                    <span class="text-sm text-slate-300 max-w-24 truncate">{{ user?.name || 'User' }}</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                
+                <!-- Dropdown Menu -->
+                <transition name="dropdown">
+                    <div v-if="showUserMenu" class="absolute right-0 mt-2 w-48 bg-slate-900/95 backdrop-blur-xl border border-slate-800 rounded-xl shadow-xl overflow-hidden z-50">
+                        <div class="px-4 py-3 border-b border-slate-800">
+                            <p class="text-sm font-medium text-white truncate">{{ user?.name }}</p>
+                            <p class="text-xs text-slate-400 truncate">{{ user?.email }}</p>
+                        </div>
+                        <a 
+                            href="#"
+                            @click.prevent="handleLogout"
+                            class="w-full px-4 py-3 text-left text-sm text-red-400 hover:bg-slate-800/50 transition-colors flex items-center gap-2"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
+                            Keluar
+                        </a>
+                    </div>
+                </transition>
+            </div>
+            <div v-else class="flex items-center gap-3">
+                <router-link 
+                    to="/login"
+                    class="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white transition-colors"
+                >
+                    Masuk
+                </router-link>
+                <router-link 
+                    to="/register"
+                    class="px-4 py-2 text-sm font-semibold text-black bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 rounded-xl transition-all duration-200 shadow-lg shadow-amber-500/25"
+                >
+                    Daftar
+                </router-link>
+            </div>
           </div>
         </div>
 
@@ -77,14 +144,55 @@ const isActive = (path) => {
             </h1>
           </router-link>
           
-          <button 
-            @click="showSearch = !showSearch"
-            class="p-2.5 rounded-xl bg-slate-800/80 text-slate-400 hover:text-white transition-colors"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </button>
+          <div class="flex items-center gap-2">
+            <!-- Mobile Auth -->
+            <div v-if="isLoggedIn" class="relative">
+                <button 
+                    @click="showUserMenu = !showUserMenu"
+                    class="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white font-bold text-sm"
+                >
+                    {{ user?.name?.charAt(0)?.toUpperCase() || 'U' }}
+                </button>
+                
+                <!-- Mobile Dropdown -->
+                <transition name="dropdown">
+                    <div v-if="showUserMenu" class="absolute right-0 mt-2 w-48 bg-slate-900/95 backdrop-blur-xl border border-slate-800 rounded-xl shadow-xl overflow-hidden z-50">
+                        <div class="px-4 py-3 border-b border-slate-800">
+                            <p class="text-sm font-medium text-white truncate">{{ user?.name }}</p>
+                            <p class="text-xs text-slate-400 truncate">{{ user?.email }}</p>
+                        </div>
+                        <a 
+                            href="#"
+                            @click.prevent="handleLogout"
+                            class="w-full px-4 py-3 text-left text-sm text-red-400 hover:bg-slate-800/50 transition-colors flex items-center gap-2"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
+                            Keluar
+                        </a>
+                    </div>
+                </transition>
+            </div>
+            <router-link 
+                v-else
+                to="/login"
+                class="p-2.5 rounded-xl bg-slate-800/80 text-amber-500 hover:text-amber-400 transition-colors"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+            </router-link>
+            
+            <button 
+              @click="showSearch = !showSearch"
+              class="p-2.5 rounded-xl bg-slate-800/80 text-slate-400 hover:text-white transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <!-- Mobile Search Bar (Expandable) -->
@@ -133,7 +241,7 @@ const isActive = (path) => {
         <router-link 
           to="/" 
           class="flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all duration-200"
-          :class="isActive('/') && !isActive('/favorites') && !isActive('/history') && !isActive('/comics') ? 'text-amber-500 bg-amber-500/10' : 'text-slate-400'"
+          :class="isActive('/') && !isActive('/favorites') && !isActive('/history') && !isActive('/comics') && !isActive('/login') && !isActive('/register') ? 'text-amber-500 bg-amber-500/10' : 'text-slate-400'"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -176,6 +284,9 @@ const isActive = (path) => {
       </div>
     </nav>
   </div>
+
+  <!-- Overlay for closing user menu -->
+  <div v-if="showUserMenu" @click="closeUserMenu" class="fixed inset-0 z-40"></div>
 </template>
 
 <style>
@@ -207,6 +318,18 @@ const isActive = (path) => {
   transform: translateY(-10px);
 }
 
+/* Dropdown transition */
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition: all 0.2s ease;
+}
+
+.dropdown-enter-from,
+.dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.95);
+}
+
 /* Safe area for bottom nav */
 .safe-area-pb {
   padding-bottom: env(safe-area-inset-bottom, 8px);
@@ -224,4 +347,3 @@ const isActive = (path) => {
   }
 }
 </style>
-

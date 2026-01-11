@@ -1,61 +1,75 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 
-// PWA Install prompt composable
-export function usePWA() {
-    const deferredPrompt = ref(null)
-    const canInstall = ref(false)
-    const isInstalled = ref(false)
-    const isOffline = ref(!navigator.onLine)
+// Global state
+const deferredPrompt = ref(null)
+const canInstall = ref(false)
+const isInstalled = ref(false)
+const isOffline = ref(typeof navigator !== 'undefined' ? !navigator.onLine : false)
 
-    // Check if app is already installed
-    const checkInstalled = () => {
-        // Check if running as standalone PWA
-        if (window.matchMedia('(display-mode: standalone)').matches) {
-            isInstalled.value = true
-            return true
-        }
-
-        // Check iOS standalone
-        if (window.navigator.standalone === true) {
-            isInstalled.value = true
-            return true
-        }
-
-        // Check localStorage for dismissed install
-        const dismissed = localStorage.getItem('pwa-install-dismissed')
-        if (dismissed) {
-            const dismissedDate = new Date(dismissed)
-            const now = new Date()
-            // Show again after 7 days
-            if ((now - dismissedDate) / (1000 * 60 * 60 * 24) < 7) {
-                return true
-            }
-        }
-
-        return false
-    }
-
-    // Handle beforeinstallprompt event
-    const handleBeforeInstallPrompt = (e) => {
-        e.preventDefault()
-        deferredPrompt.value = e
-        canInstall.value = !checkInstalled()
-    }
-
-    // Handle app installed event
-    const handleAppInstalled = () => {
+// Helper: Check if app is installed
+const checkInstalled = () => {
+    // Check if running as standalone PWA
+    if (window.matchMedia('(display-mode: standalone)').matches) {
         isInstalled.value = true
-        canInstall.value = false
-        deferredPrompt.value = null
+        return true
     }
 
-    // Network status handlers
-    const handleOnline = () => {
-        isOffline.value = false
+    // Check iOS standalone
+    if (window.navigator.standalone === true) {
+        isInstalled.value = true
+        return true
     }
 
-    const handleOffline = () => {
-        isOffline.value = true
+    // Check localStorage for dismissed install
+    const dismissed = localStorage.getItem('pwa-install-dismissed')
+    if (dismissed) {
+        const dismissedDate = new Date(dismissed)
+        const now = new Date()
+        // Show again after 7 days
+        if ((now - dismissedDate) / (1000 * 60 * 60 * 24) < 7) {
+            return true // It counts as "installed/dismissed" so don't show prompt
+        }
+    }
+
+    return false
+}
+
+// Event Handlers
+const handleBeforeInstallPrompt = (e) => {
+    e.preventDefault()
+    deferredPrompt.value = e
+    canInstall.value = !checkInstalled()
+}
+
+const handleAppInstalled = () => {
+    isInstalled.value = true
+    canInstall.value = false
+    deferredPrompt.value = null
+}
+
+const handleOnline = () => {
+    isOffline.value = false
+}
+
+const handleOffline = () => {
+    isOffline.value = true
+}
+
+// Logic to initialize listeners once
+let initialized = false
+
+export function usePWA() {
+    // Initialize listeners only once
+    if (!initialized && typeof window !== 'undefined') {
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+        window.addEventListener('appinstalled', handleAppInstalled)
+        window.addEventListener('online', handleOnline)
+        window.addEventListener('offline', handleOffline)
+        
+        // Initial check
+        checkInstalled()
+        
+        initialized = true
     }
 
     // Trigger install prompt
@@ -84,26 +98,6 @@ export function usePWA() {
         canInstall.value = false
         localStorage.setItem('pwa-install-dismissed', new Date().toISOString())
     }
-
-    onMounted(() => {
-        // Check initial state
-        checkInstalled()
-
-        // Listen for install prompt
-        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-        window.addEventListener('appinstalled', handleAppInstalled)
-
-        // Listen for network changes
-        window.addEventListener('online', handleOnline)
-        window.addEventListener('offline', handleOffline)
-    })
-
-    onUnmounted(() => {
-        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-        window.removeEventListener('appinstalled', handleAppInstalled)
-        window.removeEventListener('online', handleOnline)
-        window.removeEventListener('offline', handleOffline)
-    })
 
     return {
         canInstall,

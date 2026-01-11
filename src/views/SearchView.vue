@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { searchComics } from '../services/api'
+import { searchComics, saveSearchKeyword } from '../services/api'
 import ComicCard from '../components/ComicCard.vue'
 
 const route = useRoute()
@@ -21,6 +21,9 @@ const performSearch = async (isNewSearch = false) => {
         comics.value = []
         page.value = 1
         hasMore.value = true
+        
+        // Save search keyword to backend (runs silently)
+        saveSearchKeyword(keyword)
     }
 
     try {
